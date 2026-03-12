@@ -44,3 +44,7 @@
 
 - Added Demonstration Video.
 - Added Error Handling of 100 Time History Functions at a Time.
+
+### version 1.0.2
+
+- Remove the Time History Functions limit.

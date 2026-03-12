@@ -256,39 +256,26 @@ def run_analysis():
 # ------------------ Main callable for plotting ------------------
 def run_analysis_with_inputs(initial, final, step, time_step, bridge_type, damping_input, file_path, track_group, girder_group, global_key):
     globals()['mapi_key'] = global_key
-    # print(mapi_key);
-    # grp = MidasAPI_gen("GET","/db/grup",{})
-    # print(grp);
+   
     units = {"Assign": {"1": {"FORCE": "KN", "DIST": "M", "HEAT": "BTU", "TEMPER": "C"}}}
     MidasAPI_gen("PUT","/db/unit", units)
-    # print(uni)
+   
 
     groups = MidasAPI_gen("GET","/db/grup",{})
     nodes = MidasAPI_gen("GET","/db/node",{})
-    # print(groups)
-    # print(nodes)
-
+    
     coordinate, bridge_length = Track_details(track_group, groups, nodes)
-    # data = json.loads(file_path)
-    # print(data)
-
-    # train_load = pandas.DataFrame([data])
-    #print(file)
     
     data_flat = json.loads(file_path)
     array = np.array(data_flat).reshape(-1, 3)
     train_load = pandas.DataFrame(array, columns=["Index", "Col1", "Col2"])
     
-    # train_load = file_path
-    # train_load = pandas.read_excel(file_path, sheet_name=0, header=None)
-    # print(train_load)
     damping_val = float(damping_input) if bridge_type == "User defined" else damping(bridge_length, bridge_type)
     train_length = sum(train_load.iloc[:, 1])
     speeds = np.arange(initial, final + step, step).astype(int).astype(str)
     
 
     THLC, THFC, THNL = force_functions(train_load, coordinate, speeds, bridge_length, train_length, damping_val, time_step)
-    # print(THLC,THFC,THNL)
     THFC_clean = convert_numpy(THFC)
     assign_data = list(THFC_clean["Assign"].items())
 
@@ -298,17 +285,12 @@ def run_analysis_with_inputs(initial, final, step, time_step, bridge_type, dampi
         chunk = assign_data[i:i + chunk_size]
         batch = {str(key): value for key, value in chunk}
         payload = {"Assign": batch}
-                
-        # keys_list = list(batch.keys())
-        # print(f"Sending THFC chunk | IDs: {keys_list[0]} to {keys_list[-1]}")
+
         MidasAPI_gen("PUT", "/db/thfc", payload)
 
-
-    # print(THFC_clean)
     
     THLC_clean = convert_numpy(THLC)
     THNL_clean = convert_numpy(THNL)
-    # print("THLC_CLEAN",THLC_clean)
 
     MidasAPI_gen("PUT","/db/this", THLC_clean)
     MidasAPI_gen("PUT","/db/thnl", THNL_clean)
@@ -327,7 +309,6 @@ def run_analysis_with_inputs(initial, final, step, time_step, bridge_type, dampi
             }
         }
         response = MidasAPI_gen("POST", "/post/table",acc)
-        # print(response)
         if response and "TH" in response and "DATA" in response["TH"]:
             data_rows = response["TH"]["DATA"]
             dz_dz_values = [abs(float(row[1])) for row in data_rows]
